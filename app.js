@@ -1,8 +1,10 @@
+require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const nunjucks = require('nunjucks');
+const session = require('express-session');
 
 const indexRouter = require('./routes/index');
 
@@ -12,6 +14,13 @@ nunjucks.configure('views', {
     autoescape: true,
     express: app
 });
+
+app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true,
+    cookie: { sameSite: true }
+}));
 
 app.use(logger('dev'));
 app.use(express.json());
