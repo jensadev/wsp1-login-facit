@@ -1,0 +1,11 @@
+{% extends "layout.njk" %}
+{% block  content %}
+<main class="container mt-3">
+    <h1>{{ title }}</h1>
+    <p>Top secret page</p>
+    <p>Username: {{ username }}</p>
+    <form action="/logout" method="POST">
+        <button type="submit">Logout</button>
+    </form>
+</main>
+{% endblock %}

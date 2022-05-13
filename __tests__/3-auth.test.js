@@ -2,11 +2,28 @@ const app = require('../app');
 const request = require('supertest');
 const session = require('supertest-session');
 const pool = require('../utils/database');
+const bcrypt = require('bcrypt');
 
 describe('3. Authentication', () => {
     let testSession = null;
+    /** Setup
+     * Before all tests, we create the user in the database
+     * and create a session for the tests
+     */
     beforeAll(async () => {
         testSession = await session(app);
+        try {
+            const hash = await bcrypt.hash('test', 10);
+            await pool
+                .promise()
+                .query(`INSERT INTO users (name, password) VALUES (?,?)`, [
+                    'test',
+                    hash,
+                ]);
+        } catch (error) {
+            console.log('Something went wrong with database setup: ');
+            console.log(error);
+        }
     });
 
     describe('without authentication', () => {
@@ -30,6 +47,10 @@ describe('3. Authentication', () => {
     describe('with authentication', () => {
         let authenticatedSession;
 
+        /** Setup
+         * Before east tests, we login the user
+         * and create a session for the tests
+         */
         beforeEach(async () => {
             await testSession.post('/login').send({
                 username: 'test',
@@ -70,11 +91,24 @@ describe('3. Authentication', () => {
                 expect(response.headers.location).toBe('/');
             });
         });
-        afterAll(async () => {
+        afterEach(async () => {
+            /* Destroy the session */
             await authenticatedSession.destroy();
         });
     });
+    /** Teardown
+     * After all tests, we delete the users from the database
+     * and close the session
+     * We also close the database connection
+     */
     afterAll(async () => {
+        try {
+            await pool.promise().query('DELETE FROM users WHERE name = "asdf"');
+            await pool.promise().query('DELETE FROM users WHERE name = "test"');
+        } catch (error) {
+            console.log('Something went wrong with database cleanup: ');
+            console.log(error);
+        }
         await pool.end();
         await testSession.destroy();
     });

@@ -21,23 +21,8 @@ En användare ska kunna registrera ett nytt konto med användarnamn och lösenor
 
 ## Databas
 
-Databasen för användare finns som dump, ```users.sql```.
-Importera, lägg till fält vid behov.
-
-```sql
-describe users;
-+------------+-----------------+------+-----+-------------------+-------------------+
-| Field      | Type            | Null | Key | Default           | Extra             |
-+------------+-----------------+------+-----+-------------------+-------------------+
-| id         | bigint unsigned | NO   | PRI | NULL              | auto_increment    |
-| name       | varchar(100)    | NO   |     | NULL              |                   |
-| password   | varchar(255)    | NO   |     | NULL              |                   |
-| created-at | timestamp       | NO   |     | CURRENT_TIMESTAMP | DEFAULT_GENERATED |
-| updated-at | timestamp       | NO   |     | CURRENT_TIMESTAMP | DEFAULT_GENERATED |
-+------------+-----------------+------+-----+-------------------+-------------------+
-```
-
-För testernas skull finns det en user skapad, test:test.
+Planeras och skapas.
+tabellnamn users, fältnamn name, password åtminstone
 
 ## Routes
 
