@@ -4,9 +4,18 @@ const pool = require('../utils/database');
 const { authBySession } = require('../middleware/auth');
 const bcrypt = require('bcrypt');
 
+const usersTable = process.env.DATABASE_USERSTABLE;
+
 /* GET home page. */
 router.get('/', function (req, res, next) {
     res.render('index.njk', { title: 'Login ALC' });
+});
+
+router.get('/crypt/:pwd', function (req, res, next) {
+    const { pwd } = req.params;
+    bcrypt.hash(pwd, 10).then((hash) => {
+        res.json({ hash });
+    });
 });
 
 router.get('/login', function (req, res, next) {
@@ -24,9 +33,10 @@ router.post('/login', async function (req, res, next) {
 
         const [rows] = await pool
             .promise()
-            .query(`SELECT id, password FROM users WHERE name = ? LIMIT 1`, [
-                username,
-            ]);
+            .query(
+                `SELECT id, password FROM ${usersTable} WHERE name = ? LIMIT 1`,
+                [username],
+            );
 
         const result = rows[0];
 
@@ -43,7 +53,10 @@ router.post('/login', async function (req, res, next) {
 });
 
 router.get('/profile', authBySession, function (req, res) {
-    return res.render('profile.njk', { title: 'Profile', username: req.session.username });
+    return res.render('profile.njk', {
+        title: 'Profile',
+        username: req.session.username,
+    });
 });
 
 router.post('/logout', authBySession, function (req, res) {
@@ -60,11 +73,12 @@ router.post('/register', async function (req, res) {
         const { username, password, passwordConfirmation } = req.body;
         if (!username) throw new Error('Username is Required');
         if (!password) throw new Error('Password is Required');
-        if (password !== passwordConfirmation) throw new Error('Passwords do not match');
+        if (password !== passwordConfirmation)
+            throw new Error('Passwords do not match');
 
         let [rows] = await pool
             .promise()
-            .query(`SELECT name FROM users WHERE name = ? LIMIT 1`, [
+            .query(`SELECT name FROM ${usersTable} WHERE name = ? LIMIT 1`, [
                 username,
             ]);
 
@@ -75,16 +89,34 @@ router.post('/register', async function (req, res) {
         const hash = await bcrypt.hash(password, 10);
 
         [rows] = await pool
-        .promise()
-        .query(`INSERT INTO users (name, password) VALUES (?,?)`, [
-            username,
-            hash,
-        ]);
+            .promise()
+            .query(`INSERT INTO ${usersTable} (name, password) VALUES (?,?)`, [
+                username,
+                hash,
+            ]);
 
         if (rows.affectedRows === 0) throw new Error('User not created');
         res.redirect('/login');
     } catch (error) {
         res.render('register.njk', { title: 'Register', error: error.message });
+    }
+});
+
+router.post('/users/delete', authBySession, async function (req, res) {
+    try {
+        [rows] = await pool
+            .promise()
+            .query(`DELETE FROM ${usersTable} WHERE id = ?`, [req.session.uid]);
+
+        if (rows.affectedRows === 0) throw new Error('User not deleted');
+        req.session.destroy();
+        res.redirect('/');
+    } catch (error) {
+        res.render('profile.njk', {
+            title: 'Profile',
+            username: req.session.username,
+            error: error.message,
+        });
     }
 });
 
