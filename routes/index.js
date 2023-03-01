@@ -7,25 +7,25 @@ const bcrypt = require('bcrypt');
 const usersTable = process.env.DATABASE_USERSTABLE;
 
 /* GET home page. */
-router.get('/', function (req, res, next) {
-    res.render('index.njk', { title: 'Login ALC' });
+router.get('/', function (req, res) {
+    return res.render('index.njk', { title: 'Login ALC' });
 });
 
-router.get('/crypt/:pwd', function (req, res, next) {
+router.get('/crypt/:pwd', function (req, res) {
     const { pwd } = req.params;
     bcrypt.hash(pwd, 10).then((hash) => {
-        res.json({ hash });
+        return res.json({ hash });
     });
 });
 
-router.get('/login', function (req, res, next) {
+router.get('/login', function (req, res) {
     if (req.session.uid && req.session.username) {
-        res.redirect('/profile');
+        return res.redirect('/profile');
     }
-    res.render('login.njk', { title: 'Login' });
+    return res.render('login.njk', { title: 'Login' });
 });
 
-router.post('/login', async function (req, res, next) {
+router.post('/login', async function (req, res) {
     try {
         const { username, password } = req.body;
         if (!username) throw new Error('Username is Required');
@@ -46,9 +46,12 @@ router.post('/login', async function (req, res, next) {
 
         req.session.uid = result.id;
         req.session.username = username;
-        res.redirect('/profile');
+        return res.redirect('/profile');
     } catch (error) {
-        res.render('login.njk', { title: 'Login', error: error.message });
+        return res.render('login.njk', {
+            title: 'Login',
+            error: error.message,
+        });
     }
 });
 
@@ -61,11 +64,11 @@ router.get('/profile', authBySession, function (req, res) {
 
 router.post('/logout', authBySession, function (req, res) {
     req.session.destroy();
-    res.redirect('/');
+    return res.redirect('/');
 });
 
 router.get('/register', function (req, res) {
-    res.render('register.njk', { title: 'Register' });
+    return res.render('register.njk', { title: 'Register' });
 });
 
 router.post('/register', async function (req, res) {
@@ -96,9 +99,12 @@ router.post('/register', async function (req, res) {
             ]);
 
         if (rows.affectedRows === 0) throw new Error('User not created');
-        res.redirect('/login');
+        return res.redirect('/login');
     } catch (error) {
-        res.render('register.njk', { title: 'Register', error: error.message });
+        return res.render('register.njk', {
+            title: 'Register',
+            error: error.message,
+        });
     }
 });
 
@@ -110,9 +116,9 @@ router.post('/users/delete', authBySession, async function (req, res) {
 
         if (rows.affectedRows === 0) throw new Error('User not deleted');
         req.session.destroy();
-        res.redirect('/');
+        return res.redirect('/');
     } catch (error) {
-        res.render('profile.njk', {
+        return res.render('profile.njk', {
             title: 'Profile',
             username: req.session.username,
             error: error.message,
